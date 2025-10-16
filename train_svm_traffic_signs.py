@@ -1,4 +1,4 @@
-# train_svm_traffic_signs.py
+# train_svm_traffic_signs_rgb_hist.py
 
 import os
 import joblib
@@ -7,20 +7,19 @@ import cv2
 from sklearn import svm
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
-from skimage.feature import hog
 from sklearn.decomposition import PCA
 
 # ------------------------------
 # Configuration
 # ------------------------------
 DATASET_PATH = 'dataset'
-MODEL_SAVE_PATH = 'svm_traffic_sign.joblib'
+MODEL_SAVE_PATH = 'svm_traffic_sign_rgb_hist.joblib'
 IMAGE_SIZE = (64, 64)  # resize for feature extraction
+BINS = 16  # number of bins per color channel
 
 # ------------------------------
-# Load dataset and extract HOG features
+# Load dataset and extract RGB histogram features
 # ------------------------------
-
 def load_dataset(dataset_path):
     X = []
     y = []
@@ -37,11 +36,16 @@ def load_dataset(dataset_path):
                 img_path = os.path.join(label_dir, file)
                 img = cv2.imread(img_path)
                 img = cv2.resize(img, IMAGE_SIZE)
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-                # HOG feature extraction
-                features = hog(gray, orientations=9, pixels_per_cell=(8,8),
-                               cells_per_block=(2,2), block_norm='L2-Hys')
+                
+                # Extract RGB histograms
+                channels = cv2.split(img)
+                features = []
+                for ch in channels:
+                    hist = cv2.calcHist([ch], [0], None, [BINS], [0, 256])
+                    hist = cv2.normalize(hist, hist).flatten()
+                    features.extend(hist)
+                features = np.array(features)
+                
                 X.append(features)
                 y.append(label_idx)
     
@@ -60,11 +64,11 @@ if __name__ == "__main__":
     #pca = PCA(n_components=100)
     #X_train_pca = pca.fit_transform(X_train)
     #X_test_pca = pca.transform(X_test)
+    
     print("Training SVM model...")
-
-    clf = svm.SVC(kernel='rbf', C = 0.1, probability=True, gamma='scale')
+    clf = svm.SVC(kernel='rbf', probability=True, gamma='scale')
     clf.fit(X_train, y_train)
-
+    
     # Evaluate
     y_pred = clf.predict(X_test)
     print("\nClassification Report:")

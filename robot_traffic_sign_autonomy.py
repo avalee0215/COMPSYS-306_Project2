@@ -1,18 +1,16 @@
-# robot_traffic_sign_autonomy.py
-
 import cv2
 import joblib
 import time
 import numpy as np
-from skimage.feature import hog
 from jetbot import Camera
-import lfrobot 
+import lfrobot
 
 # ------------------------------
 # Config
 # ------------------------------
-MODEL_PATH = 'svm_traffic_sign.joblib'
+MODEL_PATH = 'svm_traffic_sign_rgb_hist.joblib'  # updated to your new model
 IMAGE_SIZE = (64, 64)
+BINS = 16
 
 # Load model
 data = joblib.load(MODEL_PATH)
@@ -27,12 +25,20 @@ lfrobot.lfSpeed(0.15)
 lfrobot.lfTurnSpeed(0.25)
 lfrobot.lfStart()
 
+# Helper: extract RGB histogram features
+def extract_rgb_hist_features(img):
+    img = cv2.resize(img, IMAGE_SIZE)
+    channels = cv2.split(img)
+    features = []
+    for ch in channels:
+        hist = cv2.calcHist([ch], [0], None, [BINS], [0, 256])
+        hist = cv2.normalize(hist, hist).flatten()
+        features.extend(hist)
+    return np.array(features)
+
 # Helper: preprocess and classify frame
 def classify_frame(frame):
-    img = cv2.resize(frame, IMAGE_SIZE)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    features = hog(gray, orientations=9, pixels_per_cell=(8,8),
-                   cells_per_block=(2,2), block_norm='L2-Hys')
+    features = extract_rgb_hist_features(frame)
     pred = model.predict([features])[0]
     prob = model.predict_proba([features])[0].max()
     return labels[pred], prob
@@ -77,7 +83,7 @@ try:
             while True:
                 frame2 = camera.value
                 l2, c2 = classify_frame(frame2)
-                if l2 != 'SHEEP' or c2 < 0.6:
+                if l2 != 'sheep' or c2 < 0.6:
                     print("Sheep gone — resume")
                     lfrobot.lfStart()
                     break
