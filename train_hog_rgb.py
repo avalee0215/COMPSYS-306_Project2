@@ -1,4 +1,4 @@
-# train_svm_traffic_signs_rgb_hog.py
+# train_rgb_hog.py
 
 import os
 import joblib
@@ -12,7 +12,7 @@ from skimage.feature import hog
 # ------------------------------
 # Configuration
 # ------------------------------
-DATASET_PATH = 'dataset_v5'
+DATASET_PATH = 'traffic_signs_dataset_v5'
 MODEL_SAVE_PATH = 'svm_traffic_sign_rgb_hog.joblib'
 IMAGE_SIZE = (64, 64)
 BINS = 16  # Histogram bins
