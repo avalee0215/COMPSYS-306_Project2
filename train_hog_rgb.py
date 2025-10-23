@@ -1,5 +1,3 @@
-# train_rgb_hog.py
-
 import os
 import joblib
 import numpy as np
@@ -9,21 +7,18 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from skimage.feature import hog
 
-# ------------------------------
 # Configuration
-# ------------------------------
-DATASET_PATH = 'traffic_signs_dataset_v5'
+DATASET_PATH = 'traffic_signs_dataset_v21'
 MODEL_SAVE_PATH = 'svm_traffic_sign_rgb_hog.joblib'
 IMAGE_SIZE = (64, 64)
-BINS = 16  # Histogram bins
+# Histogram bins
+BINS = 16  
 
-# ------------------------------
 # Feature Extraction Function
-# ------------------------------
 def extract_features(img):
     img = cv2.resize(img, IMAGE_SIZE)
 
-    # --- RGB histogram ---
+    # RGB histogram
     channels = cv2.split(img)
     hist_features = []
     for ch in channels:
@@ -31,17 +26,15 @@ def extract_features(img):
         hist = cv2.normalize(hist, hist).flatten()
         hist_features.extend(hist)
 
-    # --- HOG features ---
+    # HOG features
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     hog_features = hog(gray, orientations=9, pixels_per_cell=(8, 8),
                        cells_per_block=(2, 2), block_norm='L2-Hys', transform_sqrt=True)
 
-    # --- Combine ---
+    # Combine
     return np.concatenate([hist_features, hog_features])
 
-# ------------------------------
 # Load dataset
-# ------------------------------
 def load_dataset(dataset_path):
     X, y = [], []
     label_names = sorted(os.listdir(dataset_path))
@@ -63,9 +56,7 @@ def load_dataset(dataset_path):
 
     return np.array(X), np.array(y), label_names
 
-# ------------------------------
 # Cleanup unwanted files/folders
-# ------------------------------
 def clean_dataset(path):
     for root, dirs, files in os.walk(path):
         # Delete unwanted files
@@ -85,9 +76,7 @@ def clean_dataset(path):
                 except OSError:
                     print(f"Could not delete folder (not empty): {dir_path}")
 
-# ------------------------------
 # Main
-# ------------------------------
 if __name__ == "__main__":
     print("Cleaning dataset directory...")
     clean_dataset(DATASET_PATH)
